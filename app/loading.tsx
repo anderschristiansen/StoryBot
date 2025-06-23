@@ -53,13 +53,13 @@ const LoadingScreen = () => {
     };
   }, []);
 
-  // Show cancel button after 8 seconds
+  // Show cancel button after 5 seconds (reduced for faster generation)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!isCancelling) {
         setShowCancelButton(true);
       }
-    }, 8000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [isCancelling]);

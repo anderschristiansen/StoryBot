@@ -4,7 +4,6 @@ import { router } from 'expo-router';
 import { useAppStore } from '../../store/appStore';
 import { UserProfile } from '../../types/story';
 import { StorageUtils } from '../../utils/storage';
-import PointsDisplay from '../../components/PointsDisplay';
 
 const Profile = () => {
   const { userProfile, setUserProfile, clearUserProfile, savedStories } = useAppStore();
@@ -12,8 +11,8 @@ const Profile = () => {
   const [age, setAge] = useState(7);
   const [gender, setGender] = useState('');
   const [enableImages, setEnableImages] = useState(true);
-  const [validateDanishQuality, setValidateDanishQuality] = useState(true);
   const [developerMode, setDeveloperMode] = useState(false);
+  const [storySteps, setStorySteps] = useState(5);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -23,8 +22,8 @@ const Profile = () => {
       setAge(userProfile.age);
       setGender(userProfile.gender);
       setEnableImages(userProfile.enableImages ?? true); // Default to true
-      setValidateDanishQuality(userProfile.validateDanishQuality ?? true); // Default to true
       setDeveloperMode(userProfile.developerMode ?? false); // Default to false
+      setStorySteps(userProfile.storySteps ?? 5); // Default to 5
     }
   }, [userProfile]);
 
@@ -51,8 +50,8 @@ const Profile = () => {
       age,
       gender,
       enableImages,
-      validateDanishQuality,
-      developerMode
+      developerMode,
+      storySteps
     };
 
     try {
@@ -72,8 +71,8 @@ const Profile = () => {
       setAge(userProfile.age);
       setGender(userProfile.gender);
       setEnableImages(userProfile.enableImages ?? true);
-      setValidateDanishQuality(userProfile.validateDanishQuality ?? true);
       setDeveloperMode(userProfile.developerMode ?? false);
+      setStorySteps(userProfile.storySteps ?? 5);
     }
     setIsEditing(false);
   };
@@ -87,7 +86,7 @@ const Profile = () => {
   };
 
   // Auto-save function for developer settings
-  const handleDeveloperSettingChange = async (setting: 'enableImages' | 'validateDanishQuality', value: boolean) => {
+  const handleDeveloperSettingChange = async (setting: 'enableImages' | 'developerMode', value: boolean) => {
     if (!userProfile) return;
     
     const updatedProfile: UserProfile = {
@@ -101,8 +100,8 @@ const Profile = () => {
       // Update local state
       if (setting === 'enableImages') {
         setEnableImages(value);
-      } else if (setting === 'validateDanishQuality') {
-        setValidateDanishQuality(value);
+      } else if (setting === 'developerMode') {
+        setDeveloperMode(value);
       }
       
     } catch (error) {
@@ -203,20 +202,6 @@ const Profile = () => {
           </View>
         </View>
 
-        {/* Character Points Display */}
-        <PointsDisplay
-          points={
-            savedStories.reduce(
-              (acc, story) => ({
-                courage: acc.courage + (story.pointsEarned?.courage || 0),
-                wisdom: acc.wisdom + (story.pointsEarned?.wisdom || 0),
-                kindness: acc.kindness + (story.pointsEarned?.kindness || 0)
-              }),
-              { courage: 0, wisdom: 0, kindness: 0 }
-            )
-          }
-          className="mb-6"
-        />
 
         {/* Profile Form */}
         <View className="bg-white rounded-2xl p-6 mb-6">
@@ -290,6 +275,45 @@ const Profile = () => {
                 {userProfile.age} år
               </Text>
             )}
+          </View>
+
+          {/* Story Steps Configuration */}
+          <View className="mb-4">
+            <Text className="text-lg font-semibold text-primary-900 mb-2">
+              Historie Længde
+            </Text>
+            {isEditing ? (
+              <View className="flex-row items-center justify-center bg-primary-50 border border-primary-200 rounded-xl py-3">
+                <TouchableOpacity
+                  onPress={() => setStorySteps(Math.max(3, storySteps - 1))}
+                  className="w-10 h-10 bg-primary-200 rounded-full items-center justify-center"
+                  disabled={storySteps <= 3}
+                >
+                  <Text className="text-xl font-bold text-primary-900">-</Text>
+                </TouchableOpacity>
+                
+                <View className="mx-6 px-4 py-1 bg-primary-100 rounded-lg">
+                  <Text className="text-2xl font-bold text-primary-900 text-center">
+                    {storySteps}
+                  </Text>
+                </View>
+                
+                <TouchableOpacity
+                  onPress={() => setStorySteps(Math.min(10, storySteps + 1))}
+                  className="w-10 h-10 bg-primary-200 rounded-full items-center justify-center"
+                  disabled={storySteps >= 10}
+                >
+                  <Text className="text-xl font-bold text-primary-900">+</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <Text className="text-lg text-primary-700 py-3">
+                {userProfile.storySteps ?? 5} trin per historie
+              </Text>
+            )}
+            <Text className="text-sm text-primary-600 mt-1 text-center">
+              Vælg mellem 3-10 trin per historie
+            </Text>
           </View>
 
           {/* Gender */}
@@ -388,24 +412,24 @@ const Profile = () => {
             </View>
           </View>
 
-          {/* Danish Quality Validation Toggle */}
+          {/* Developer Mode Toggle */}
           <View className="mb-4">
             <View className="flex-row items-center justify-between">
               <View className="flex-1 mr-4">
                 <Text className="text-lg font-semibold text-blue-900 mb-1">
-                  Dansk Kvalitetskontrol
+                  Debug Mode
                 </Text>
                 <Text className="text-sm text-blue-700">
-                  {validateDanishQuality 
-                    ? 'Valider dansk sprog (langsom, koster lidt)' 
-                    : 'Spring validering over (hurtig, gratis)'}
+                  {developerMode 
+                    ? 'Vis korrekte svar i historier (test mode)' 
+                    : 'Normal spilmode (skjul korrekte svar)'}
                 </Text>
               </View>
               <Switch
-                value={validateDanishQuality}
-                onValueChange={(value) => handleDeveloperSettingChange('validateDanishQuality', value)}
-                trackColor={{ false: '#E5E7EB', true: '#F59E0B' }}
-                thumbColor={validateDanishQuality ? '#FFFFFF' : '#9CA3AF'}
+                value={developerMode}
+                onValueChange={(value) => handleDeveloperSettingChange('developerMode', value)}
+                trackColor={{ false: '#E5E7EB', true: '#8B5CF6' }}
+                thumbColor={developerMode ? '#FFFFFF' : '#9CA3AF'}
               />
             </View>
           </View>
@@ -420,14 +444,12 @@ const Profile = () => {
                 • DALL-E: {enableImages ? 'Koster $0.20-0.40 per historie' : 'Sparer $0.20-0.40 per historie'}
               </Text>
               <Text className="text-xs text-yellow-700">
-                • Validering: {validateDanishQuality ? 'Koster ~$0.01 og tager 2-3 sek.' : 'Sparer tid og penge'}
+                • Debug Mode: {developerMode ? 'Viser korrekte svar for test' : 'Normal spilmode'}
               </Text>
               <Text className="text-xs font-semibold text-yellow-800 mt-2">
-                {!enableImages && !validateDanishQuality 
-                  ? '🚀 Maksimal hastighed: ~5-10 sek. per historie' 
-                  : enableImages && validateDanishQuality 
-                  ? '🐌 Fuld kvalitet: ~30-60 sek. per historie'
-                  : '⚖️ Balanceret: ~15-30 sek. per historie'}
+                {enableImages 
+                  ? '🎨 Med billeder: ~10-15 sek. per historie' 
+                  : '🚀 Kun tekst: ~3-5 sek. per historie'}
               </Text>
             </View>
           </View>

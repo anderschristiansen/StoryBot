@@ -1,13 +1,9 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import ChoicePointFeedback from '../components/ChoicePointFeedback';
-import StoryPathTree from '../components/StoryPathTree';
 import { OpenAIService } from '../services/openaiService';
 import { useAppStore } from '../store/appStore';
-import { PointsEarned } from '../types/gamification';
 import { Choice, StoryStep } from '../types/story';
-import { addPointsToStory, createPointsEarned } from '../utils/gamificationUtils';
 
 const { width } = Dimensions.get('window');
 
@@ -17,8 +13,6 @@ const StoryScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [storyProgress, setStoryProgress] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [showPointsFeedback, setShowPointsFeedback] = useState(false);
-  const [earnedPoints, setEarnedPoints] = useState<PointsEarned | null>(null);
 
   useEffect(() => {
     if (!currentStory) {
@@ -28,7 +22,15 @@ const StoryScreen = () => {
 
     // Find current step
     const step = currentStory.steps.find(s => s.id === currentStory.currentStepId);
-    setCurrentStep(step || null);
+    
+    // Don't override failure steps that are currently being displayed
+    setCurrentStep(prevStep => {
+      if (prevStep && (prevStep as any).isFailureStep) {
+        console.log('[Story] Keeping failure step, not overriding with story step');
+        return prevStep;
+      }
+      return step || null;
+    });
     
     // Calculate progress
     const currentIndex = currentStory.steps.findIndex(s => s.id === currentStory.currentStepId);
@@ -42,56 +44,75 @@ const StoryScreen = () => {
     setIsLoading(true);
 
     try {
-      // Check if this is the final step
-      const nextStep = currentStory.steps.find(s => s.id === choice.nextStepId);
+      // Track moral choice correctness
+      let updatedWrongChoicesCount = currentStory.wrongChoicesCount || 0;
+      const updatedRetryAttempts = currentStory.retryAttempts || 0;
       
-      // Calculate points earned from this choice
-      let pointsToEarn: PointsEarned | null = null;
-      let updatedStoryPoints = currentStory.pointsEarned || { courage: 0, wisdom: 0, kindness: 0 };
-      
-      if (choice.choiceType && choice.points && choice.points > 0) {
-        pointsToEarn = createPointsEarned(choice.choiceType, choice.points);
-        updatedStoryPoints = addPointsToStory(updatedStoryPoints, pointsToEarn);
+      if (!choice.isCorrect) {
+        // Wrong choice - show inline failure
+        updatedWrongChoicesCount++;
+        console.log('[Choice] Wrong choice made:', choice.text);
+        
+        // Display failure info inline (no navigation needed)
+        const failureStep = {
+          ...currentStep,
+          isFailureStep: true,
+          failureInfo: choice.failureInfo,
+          retryFromStepId: currentStep.id
+        } as any; // Temporary type assertion for transition
+        
+        console.log('[Choice] Setting failure step:', failureStep);
+        setCurrentStep(failureStep);
+        
+        // Update story with wrong choice tracking
+        const updatedStory = {
+          ...currentStory,
+          choicesMade: [...currentStory.choicesMade, choice.text],
+          choiceSequence: [...currentStory.choiceSequence, choice.id],
+          wrongChoicesCount: updatedWrongChoicesCount,
+          retryAttempts: updatedRetryAttempts
+        };
+        
+        await updateSavedStory(updatedStory);
+        setCurrentStory(updatedStory);
+        
+        console.log('[Choice] Showing inline failure for wrong choice');
+        return;
       }
       
-      // Update story with choice made
+      // Correct choice - proceed to next step
+      console.log('[Choice] Correct choice made:', choice.text);
+      
+      const nextStep = currentStory.steps.find(s => s.id === choice.nextStepId);
+      
       const updatedChoiceSequence = [...currentStory.choiceSequence, choice.id];
       const updatedStory = {
         ...currentStory,
-        currentStepId: choice.nextStepId,
+        currentStepId: choice.nextStepId!,
         choicesMade: [...currentStory.choicesMade, choice.text],
         choiceSequence: updatedChoiceSequence,
-        pointsEarned: updatedStoryPoints
+        wrongChoicesCount: updatedWrongChoicesCount,
+        retryAttempts: updatedRetryAttempts
       };
-
-      console.log('[Choice] Choice made:', {
-        choiceId: choice.id,
-        choiceText: choice.text,
-        nextStepId: choice.nextStepId,
-        choiceType: choice.choiceType,
-        points: choice.points,
-        updatedSequence: updatedChoiceSequence,
-        sequenceLength: updatedChoiceSequence.length
-      });
 
       if (nextStep?.isEnding) {
         // Generate story outcome for final step
         const outcome = await OpenAIService.generateStoryOutcome(updatedStory);
         updatedStory.outcome = outcome;
         updatedStory.completed = true;
+        
+        // Only mark as correctly completed if reached via correct choices
+        updatedStory.completedCorrectly = (updatedWrongChoicesCount === 0);
+        console.log('[Choice] Story completed:', {
+          correctlyCompleted: updatedStory.completedCorrectly,
+          wrongChoices: updatedWrongChoicesCount
+        });
       }
 
       // Update the story in store and storage
-      console.log('[Choice] Saving updated story to storage...');
       await updateSavedStory(updatedStory);
       setCurrentStory(updatedStory);
       console.log('[Choice] Story updated successfully');
-
-      // Show points feedback if points were earned
-      if (pointsToEarn) {
-        setEarnedPoints(pointsToEarn);
-        setShowPointsFeedback(true);
-      }
 
     } catch (error) {
       console.error('Error handling choice:', error);
@@ -109,11 +130,112 @@ const StoryScreen = () => {
     router.replace('/(tabs)/stories');
   };
 
+  const handleRetryFromFailure = async () => {
+    if (!currentStory || !currentStep) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Increment retry attempts
+      const updatedRetryAttempts = (currentStory.retryAttempts || 0) + 1;
+      
+      // Get the original step (remove failure state)
+      const originalStepId = (currentStep as any).retryFromStepId || currentStory.currentStepId;
+      const originalStep = currentStory.steps.find(s => s.id === originalStepId);
+      
+      if (originalStep) {
+        // Clear failure state and show original step
+        setCurrentStep(originalStep);
+        
+        // Update retry count in story
+        const updatedStory = {
+          ...currentStory,
+          retryAttempts: updatedRetryAttempts
+        };
+        
+        await updateSavedStory(updatedStory);
+        setCurrentStory(updatedStory);
+        
+        console.log('[Retry] Showing original step for retry, attempts:', updatedRetryAttempts);
+      }
+      
+    } catch (error) {
+      console.error('Error retrying story:', error);
+      Alert.alert('Fejl', 'Der skete en fejl. Prøv igen.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!currentStory || !currentStep) {
     return (
       <View className="flex-1 bg-primary-50 justify-center items-center">
         <Text className="text-xl text-primary-700">Indlæser historie...</Text>
       </View>
+    );
+  }
+
+  // Inline failure display screen
+  if ((currentStep as any).isFailureStep) {
+    const failureInfo = (currentStep as any).failureInfo;
+    return (
+      <ScrollView className="flex-1 bg-red-50 pt-10">
+        <View className="px-6 pt-16 pb-8">
+          {/* Failure Header */}
+          <View className="items-center mb-8">
+            <Text className="text-6xl mb-4">😔</Text>
+            <Text className="text-3xl font-bold text-red-900 text-center mb-2">
+              Åh nej!
+            </Text>
+            <Text className="text-lg text-red-700 text-center">
+              Det var ikke det rigtige valg
+            </Text>
+          </View>
+
+          {/* Failure Explanation */}
+          <View className="bg-white rounded-2xl p-6 mb-6">
+            <Text className="text-lg text-red-900 leading-7 text-center">
+              {failureInfo?.text || 'Det valg var ikke korrekt. Prøv igen!'}
+            </Text>
+          </View>
+
+          {/* Moral Lesson */}
+          {failureInfo?.moralLesson && (
+            <View className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
+              <Text className="text-xl font-bold text-blue-900 mb-3 text-center">
+                💡 Hvad lærte vi?
+              </Text>
+              <Text className="text-lg text-blue-800 leading-7 text-center">
+                {failureInfo.moralLesson}
+              </Text>
+            </View>
+          )}
+
+          {/* Retry Button */}
+          <View className="space-y-4 gap-3">
+            <TouchableOpacity
+              onPress={handleRetryFromFailure}
+              disabled={isLoading}
+              className={`py-4 px-6 rounded-2xl ${
+                isLoading ? 'bg-green-300' : 'bg-green-500'
+              }`}
+            >
+              <Text className="text-xl font-bold text-white text-center">
+                {isLoading ? 'Prøver igen...' : '🔄 Prøv igen'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={handleGoToStories}
+              className="py-3 px-6 bg-primary-200 rounded-xl"
+            >
+              <Text className="text-lg font-bold text-primary-900 text-center">
+                Afslut historie
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
     );
   }
 
@@ -124,13 +246,31 @@ const StoryScreen = () => {
         <View className="px-6 pt-16 pb-8">
           {/* Completion Header */}
           <View className="items-center mb-8">
-            <Text className="text-6xl mb-4">🎉</Text>
+            <Text className="text-6xl mb-4">
+              {currentStory.completedCorrectly ? '🏆' : '🎉'}
+            </Text>
             <Text className="text-3xl font-bold text-primary-900 text-center mb-2">
-              Historie Fuldført!
+              {currentStory.completedCorrectly 
+                ? 'Perfekt fuldført!' 
+                : 'Historie fuldført!'}
             </Text>
             <Text className="text-lg text-primary-700 text-center">
               {currentStory.title}
             </Text>
+            
+            {/* Performance Summary */}
+            <View className="mt-4 bg-white rounded-xl p-4">
+              <Text className="text-center text-primary-900 font-semibold">
+                {currentStory.completedCorrectly 
+                  ? '🌟 Du traf alle de rigtige moral-valg!' 
+                  : `✨ Fuldført med ${currentStory.wrongChoicesCount || 0} fejl og ${currentStory.retryAttempts || 0} gentagelser`}
+              </Text>
+              {!currentStory.completedCorrectly && (
+                <Text className="text-center text-primary-700 text-sm mt-2">
+                  Prøv at spille igen for at træffe de perfekte valg!
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* Final Image */}
@@ -141,13 +281,6 @@ const StoryScreen = () => {
               className="rounded-2xl"
               resizeMode="cover"
             />
-          </View>
-
-          {/* Final Story Text */}
-          <View className="bg-white rounded-2xl p-6 mb-6">
-            <Text className="text-lg text-primary-900 leading-7">
-              {currentStep.text}
-            </Text>
           </View>
 
           {/* Story Outcome */}
@@ -162,10 +295,6 @@ const StoryScreen = () => {
             </View>
           )}
 
-          {/* Story Path Discovery */}
-          <View className="mb-8">
-            <StoryPathTree story={currentStory} />
-          </View>
 
           {/* Action Buttons */}
           <View className="space-y-4 gap-3">
@@ -206,36 +335,6 @@ const StoryScreen = () => {
         <Text className="text-sm text-primary-700 mt-2 text-center">
           Trin {currentStepIndex + 1} af {currentStory.steps.length}
         </Text>
-        
-        {/* Show current story points */}
-        {currentStory.pointsEarned && (currentStory.pointsEarned.courage + currentStory.pointsEarned.wisdom + currentStory.pointsEarned.kindness) > 0 && (
-          <View className="flex-row justify-center mt-3 space-x-4">
-            {currentStory.pointsEarned.courage > 0 && (
-              <View className="flex-row items-center">
-                <Text className="text-lg">🦁</Text>
-                <Text className="text-sm font-semibold text-orange-600 ml-1">
-                  {currentStory.pointsEarned.courage}
-                </Text>
-              </View>
-            )}
-            {currentStory.pointsEarned.wisdom > 0 && (
-              <View className="flex-row items-center">
-                <Text className="text-lg">🧠</Text>
-                <Text className="text-sm font-semibold text-blue-600 ml-1">
-                  {currentStory.pointsEarned.wisdom}
-                </Text>
-              </View>
-            )}
-            {currentStory.pointsEarned.kindness > 0 && (
-              <View className="flex-row items-center">
-                <Text className="text-lg">❤️</Text>
-                <Text className="text-sm font-semibold text-pink-600 ml-1">
-                  {currentStory.pointsEarned.kindness}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -264,31 +363,47 @@ const StoryScreen = () => {
                 Hvad vil du gøre?
               </Text>
               
-              {currentStep.choices.map((choice, index) => (
-                <TouchableOpacity
-                  key={choice.id}
-                  onPress={() => handleChoice(choice)}
-                  disabled={isLoading}
-                  className={`p-5 rounded-2xl border-2 ${
-                    isLoading 
-                      ? 'bg-primary-100 border-primary-200' 
-                      : 'bg-white border-primary-300'
-                  }`}
-                >
-                  <View className="flex-row items-center">
-                    <View className="w-8 h-8 bg-primary-500 rounded-full items-center justify-center mr-4">
-                      <Text className="text-white font-bold">
-                        {String.fromCharCode(65 + index)}
+              {currentStep.choices.map((choice, index) => {
+                const isCorrectChoice = choice.isCorrect;
+                const isDeveloperMode = currentStory.protagonist.developerMode;
+                const shouldShowHint = isDeveloperMode && isCorrectChoice;
+                
+                return (
+                  <TouchableOpacity
+                    key={choice.id}
+                    onPress={() => handleChoice(choice)}
+                    disabled={isLoading}
+                    className={`p-5 rounded-2xl border-2 ${
+                      shouldShowHint
+                        ? 'bg-green-50 border-green-400 border-dashed'
+                        : isLoading 
+                        ? 'bg-primary-100 border-primary-200' 
+                        : 'bg-white border-primary-300'
+                    }`}
+                  >
+                    <View className="flex-row items-center">
+                      <View className={`w-8 h-8 rounded-full items-center justify-center mr-4 ${
+                        shouldShowHint ? 'bg-green-500' : 'bg-primary-500'
+                      }`}>
+                        <Text className="text-white font-bold">
+                          {shouldShowHint ? '✓' : String.fromCharCode(65 + index)}
+                        </Text>
+                      </View>
+                      <Text className={`text-lg flex-1 ${
+                        shouldShowHint ? 'text-green-900 font-semibold' :
+                        isLoading ? 'text-primary-600' : 'text-primary-900'
+                      }`}>
+                        {choice.text}
+                        {shouldShowHint && (
+                          <Text className="text-sm font-normal text-green-700">
+                            {'\n'}💡 Korrekt valg (debug mode)
+                          </Text>
+                        )}
                       </Text>
                     </View>
-                    <Text className={`text-lg flex-1 ${
-                      isLoading ? 'text-primary-600' : 'text-primary-900'
-                    }`}>
-                      {choice.text}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
 
@@ -347,13 +462,6 @@ const StoryScreen = () => {
           )}
         </View>
       </ScrollView>
-
-      {/* Choice Points Feedback */}
-      <ChoicePointFeedback
-        pointsEarned={earnedPoints}
-        visible={showPointsFeedback}
-        onAnimationComplete={() => setShowPointsFeedback(false)}
-      />
     </View>
   );
 };

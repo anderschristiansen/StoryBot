@@ -105,50 +105,6 @@ const Stories = () => {
             </View>
           </View>
 
-          {/* Points Display */}
-          {story.pointsEarned && (story.pointsEarned.courage + story.pointsEarned.wisdom + story.pointsEarned.kindness) > 0 && (
-            <View className="flex-row justify-center mb-3 space-x-3">
-              {story.pointsEarned.courage > 0 && (
-                <View className="flex-row items-center bg-orange-50 px-2 py-1 rounded-lg">
-                  <Text className="text-sm">🦁</Text>
-                  <Text className="text-xs font-semibold text-orange-600 ml-1">
-                    {story.pointsEarned.courage}
-                  </Text>
-                </View>
-              )}
-              {story.pointsEarned.wisdom > 0 && (
-                <View className="flex-row items-center bg-blue-50 px-2 py-1 rounded-lg">
-                  <Text className="text-sm">🧠</Text>
-                  <Text className="text-xs font-semibold text-blue-600 ml-1">
-                    {story.pointsEarned.wisdom}
-                  </Text>
-                </View>
-              )}
-              {story.pointsEarned.kindness > 0 && (
-                <View className="flex-row items-center bg-pink-50 px-2 py-1 rounded-lg">
-                  <Text className="text-sm">❤️</Text>
-                  <Text className="text-xs font-semibold text-pink-600 ml-1">
-                    {story.pointsEarned.kindness}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Path Discovery Progress */}
-          {story.completed && (
-            <View className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-sm font-semibold text-yellow-800">
-                  🌟 Stiudforskning
-                </Text>
-                <Text className="text-xs text-yellow-700">
-                  1 af {Math.min(story.steps.reduce((acc, step) => acc + step.choices.length, 0), 8)} stier opdaget
-                </Text>
-              </View>
-            </View>
-          )}
-
           {/* Action Buttons */}
           <View className="flex-row space-x-2 gap-2">
             {/* Continue/Play Button */}
