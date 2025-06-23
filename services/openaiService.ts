@@ -30,11 +30,15 @@ CHOICE RULES:
 - Correct choice: shows kindness, honesty, helpfulness (isCorrect: true, has nextStepId)
 - Wrong choices: show selfishness, lying, greed (isCorrect: false, has failureInfo)
 - Failure info includes explanation and moral lesson
+- IMPORTANT: Randomly vary which position (1st, 2nd, or 3rd) contains the correct choice
+- Do NOT always put the correct choice first - mix up the order randomly
 
 LANGUAGE:
 - Write ALL story text in perfect Danish
 - Use age-appropriate vocabulary for ${protagonist.age}-year-olds
 - Natural Danish grammar and sentence structure
+- Story text should describe the situation WITHOUT ending with questions
+- Let the UI handle choice prompts, not the story text
 
 Return ONLY valid JSON:
 
@@ -43,38 +47,38 @@ Return ONLY valid JSON:
   "steps": [
     {
       "id": "step1",
-      "text": "Story situation in natural Danish for ${protagonist.age}-year-old",
+      "text": "Describe situation in Danish without asking questions",
       "choices": [
         {
-          "id": "choice1_correct",
-          "text": "Correct moral action in Danish",
+          "id": "choice1_1",
+          "text": "Choice text (could be correct or wrong)",
+          "isCorrect": false,
+          "failureInfo": {
+            "text": "Explanation in Danish",
+            "moralLesson": "Lesson"
+          }
+        },
+        {
+          "id": "choice1_2", 
+          "text": "Choice text (could be correct or wrong)",
           "isCorrect": true,
           "nextStepId": "step2"
         },
         {
-          "id": "choice1_wrong1",
-          "text": "Wrong selfish action in Danish",
+          "id": "choice1_3",
+          "text": "Choice text (could be correct or wrong)", 
           "isCorrect": false,
           "failureInfo": {
-            "text": "Kind explanation of why this choice was wrong, in Danish",
-            "moralLesson": "What the child should learn from this mistake"
-          }
-        },
-        {
-          "id": "choice1_wrong2",
-          "text": "Another wrong action in Danish",
-          "isCorrect": false,
-          "failureInfo": {
-            "text": "Kind explanation of why this choice was wrong, in Danish",
-            "moralLesson": "Another moral lesson"
+            "text": "Explanation in Danish",
+            "moralLesson": "Lesson"
           }
         }
       ]
     },
-    ${Array.from({length: storySteps - 1}, (_, i) => `{"id":"step${i + 2}","text":"Danish story ${i + 2}","choices":[{"id":"choice${i + 2}_correct","text":"Correct choice","isCorrect":true,"nextStepId":"${i + 2 === storySteps - 1 ? 'ending' : `step${i + 3}`}"},{"id":"choice${i + 2}_wrong1","text":"Wrong choice 1","isCorrect":false,"failureInfo":{"text":"Explanation","moralLesson":"Lesson"}},{"id":"choice${i + 2}_wrong2","text":"Wrong choice 2","isCorrect":false,"failureInfo":{"text":"Explanation","moralLesson":"Lesson"}}]}`).join(',')},
+    ${Array.from({length: storySteps - 1}, (_, i) => `{"id":"step${i + 2}","text":"Situation description in Danish without questions","choices":[{"id":"choice${i + 2}_1","text":"Choice text","isCorrect":false,"failureInfo":{"text":"Explanation","moralLesson":"Lesson"}},{"id":"choice${i + 2}_2","text":"Choice text","isCorrect":false,"failureInfo":{"text":"Explanation","moralLesson":"Lesson"}},{"id":"choice${i + 2}_3","text":"Choice text","isCorrect":true,"nextStepId":"${i + 2 === storySteps - 1 ? 'ending' : `step${i + 3}`}"}]}`).join(',')},
     {
       "id": "ending",
-      "text": "Happy ending in Danish, congratulating moral choices",
+      "text": "Happy ending story conclusion in Danish without questions",
       "isEnding": true,
       "choices": []
     }
@@ -124,7 +128,7 @@ High quality digital art, professional children's book style.`;
         messages: [
           {
             role: "system",
-            content: "Du er børnebogsforfatter. Skriv engagerende historier på perfekt dansk med moral-valg."
+            content: "Du er børnebogsforfatter. Skriv engagerende historier på perfekt dansk med moral-valg. VIGTIGT: Afslut aldrig historie-tekst med spørgsmål - lad UI'en håndtere valg-prompts. Bland positionerne af korrekte valg tilfældigt - put ikke altid det korrekte valg først."
           },
           {
             role: "user",

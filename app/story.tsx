@@ -146,6 +146,7 @@ const StoryScreen = () => {
       if (originalStep) {
         // Clear failure state and show original step
         setCurrentStep(originalStep);
+        console.log('[Retry] Returning to original step for retry');
         
         // Update retry count in story
         const updatedStory = {

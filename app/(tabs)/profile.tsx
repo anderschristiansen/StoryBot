@@ -434,6 +434,21 @@ const Profile = () => {
             </View>
           </View>
 
+          {/* Demo & Testing */}
+          <View className="mb-4">
+            <TouchableOpacity
+              onPress={() => router.push('/loading?demo=true')}
+              className="bg-purple-100 border border-purple-200 rounded-xl p-4"
+            >
+              <Text className="text-lg font-semibold text-purple-900 mb-1 text-center">
+                ✨ Se Loading Animation Demo
+              </Text>
+              <Text className="text-sm text-purple-700 text-center">
+                Preview af den nye minimalistiske Lottie animation
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Performance & Cost Information */}
           <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
             <Text className="text-sm font-semibold text-yellow-800 mb-2">
