@@ -79,11 +79,22 @@ export const StorageUtils = {
 
   async updateStory(updatedStory: Story): Promise<void> {
     try {
+      console.log('[Storage] Updating story:', {
+        id: updatedStory.id,
+        title: updatedStory.title,
+        completed: updatedStory.completed,
+        choiceSequenceLength: updatedStory.choiceSequence.length,
+        choicesMadeLength: updatedStory.choicesMade.length,
+        choiceSequence: updatedStory.choiceSequence
+      });
+      
       const existingStories = await this.getSavedStories();
       const updatedStories = existingStories.map(story => 
         story.id === updatedStory.id ? updatedStory : story
       );
       await this.saveStories(updatedStories);
+      
+      console.log('[Storage] Story updated successfully');
     } catch (error) {
       console.error('Error updating story:', error);
       throw error;

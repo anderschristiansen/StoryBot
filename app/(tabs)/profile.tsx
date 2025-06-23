@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, SafeAreaView, Switch } from 'react-native';
 import { router } from 'expo-router';
 import { useAppStore } from '../../store/appStore';
 import { UserProfile } from '../../types/story';
 import { StorageUtils } from '../../utils/storage';
+import PointsDisplay from '../../components/PointsDisplay';
 
 const Profile = () => {
   const { userProfile, setUserProfile, clearUserProfile, savedStories } = useAppStore();
   const [name, setName] = useState('');
   const [age, setAge] = useState(7);
   const [gender, setGender] = useState('');
+  const [enableImages, setEnableImages] = useState(true);
+  const [validateDanishQuality, setValidateDanishQuality] = useState(true);
+  const [developerMode, setDeveloperMode] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -18,6 +22,9 @@ const Profile = () => {
       setName(userProfile.name);
       setAge(userProfile.age);
       setGender(userProfile.gender);
+      setEnableImages(userProfile.enableImages ?? true); // Default to true
+      setValidateDanishQuality(userProfile.validateDanishQuality ?? true); // Default to true
+      setDeveloperMode(userProfile.developerMode ?? false); // Default to false
     }
   }, [userProfile]);
 
@@ -42,7 +49,10 @@ const Profile = () => {
     const updatedProfile: UserProfile = {
       name: name.trim(),
       age,
-      gender
+      gender,
+      enableImages,
+      validateDanishQuality,
+      developerMode
     };
 
     try {
@@ -61,6 +71,9 @@ const Profile = () => {
       setName(userProfile.name);
       setAge(userProfile.age);
       setGender(userProfile.gender);
+      setEnableImages(userProfile.enableImages ?? true);
+      setValidateDanishQuality(userProfile.validateDanishQuality ?? true);
+      setDeveloperMode(userProfile.developerMode ?? false);
     }
     setIsEditing(false);
   };
@@ -70,6 +83,31 @@ const Profile = () => {
       setAge(age + 1);
     } else if (!increment && age > 4) {
       setAge(age - 1);
+    }
+  };
+
+  // Auto-save function for developer settings
+  const handleDeveloperSettingChange = async (setting: 'enableImages' | 'validateDanishQuality', value: boolean) => {
+    if (!userProfile) return;
+    
+    const updatedProfile: UserProfile = {
+      ...userProfile,
+      [setting]: value
+    };
+    
+    try {
+      setUserProfile(updatedProfile);
+      
+      // Update local state
+      if (setting === 'enableImages') {
+        setEnableImages(value);
+      } else if (setting === 'validateDanishQuality') {
+        setValidateDanishQuality(value);
+      }
+      
+    } catch (error) {
+      console.error('Error updating developer setting:', error);
+      Alert.alert('Fejl', 'Kunne ikke gemme indstilling. Prøv igen.');
     }
   };
 
@@ -164,6 +202,21 @@ const Profile = () => {
             </View>
           </View>
         </View>
+
+        {/* Character Points Display */}
+        <PointsDisplay
+          points={
+            savedStories.reduce(
+              (acc, story) => ({
+                courage: acc.courage + (story.pointsEarned?.courage || 0),
+                wisdom: acc.wisdom + (story.pointsEarned?.wisdom || 0),
+                kindness: acc.kindness + (story.pointsEarned?.kindness || 0)
+              }),
+              { courage: 0, wisdom: 0, kindness: 0 }
+            )
+          }
+          className="mb-6"
+        />
 
         {/* Profile Form */}
         <View className="bg-white rounded-2xl p-6 mb-6">
@@ -300,6 +353,84 @@ const Profile = () => {
               </TouchableOpacity>
             </View>
           )}
+        </View>
+
+        {/* Developer Settings */}
+        <View className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-6">
+          <View className="mb-6">
+            <Text className="text-xl font-bold text-blue-900 text-center">
+              🛠️ Udviklerindstillinger
+            </Text>
+            <Text className="text-sm text-blue-700 text-center mt-1">
+              Test-indstillinger der gemmes automatisk
+            </Text>
+          </View>
+
+          {/* Image Generation Toggle */}
+          <View className="mb-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 mr-4">
+                <Text className="text-lg font-semibold text-blue-900 mb-1">
+                  DALL-E Billeder
+                </Text>
+                <Text className="text-sm text-blue-700">
+                  {enableImages 
+                    ? 'Generer rigtige billeder (koster penge)' 
+                    : 'Brug pladsholderbilleder (gratis)'}
+                </Text>
+              </View>
+              <Switch
+                value={enableImages}
+                onValueChange={(value) => handleDeveloperSettingChange('enableImages', value)}
+                trackColor={{ false: '#E5E7EB', true: '#10B981' }}
+                thumbColor={enableImages ? '#FFFFFF' : '#9CA3AF'}
+              />
+            </View>
+          </View>
+
+          {/* Danish Quality Validation Toggle */}
+          <View className="mb-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 mr-4">
+                <Text className="text-lg font-semibold text-blue-900 mb-1">
+                  Dansk Kvalitetskontrol
+                </Text>
+                <Text className="text-sm text-blue-700">
+                  {validateDanishQuality 
+                    ? 'Valider dansk sprog (langsom, koster lidt)' 
+                    : 'Spring validering over (hurtig, gratis)'}
+                </Text>
+              </View>
+              <Switch
+                value={validateDanishQuality}
+                onValueChange={(value) => handleDeveloperSettingChange('validateDanishQuality', value)}
+                trackColor={{ false: '#E5E7EB', true: '#F59E0B' }}
+                thumbColor={validateDanishQuality ? '#FFFFFF' : '#9CA3AF'}
+              />
+            </View>
+          </View>
+
+          {/* Performance & Cost Information */}
+          <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <Text className="text-sm font-semibold text-yellow-800 mb-2">
+              ⚡ Ydeevne & Omkostninger
+            </Text>
+            <View className="space-y-1">
+              <Text className="text-xs text-yellow-700">
+                • DALL-E: {enableImages ? 'Koster $0.20-0.40 per historie' : 'Sparer $0.20-0.40 per historie'}
+              </Text>
+              <Text className="text-xs text-yellow-700">
+                • Validering: {validateDanishQuality ? 'Koster ~$0.01 og tager 2-3 sek.' : 'Sparer tid og penge'}
+              </Text>
+              <Text className="text-xs font-semibold text-yellow-800 mt-2">
+                {!enableImages && !validateDanishQuality 
+                  ? '🚀 Maksimal hastighed: ~5-10 sek. per historie' 
+                  : enableImages && validateDanishQuality 
+                  ? '🐌 Fuld kvalitet: ~30-60 sek. per historie'
+                  : '⚖️ Balanceret: ~15-30 sek. per historie'}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Danger Zone */}

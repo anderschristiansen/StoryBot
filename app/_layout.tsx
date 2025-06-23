@@ -8,7 +8,6 @@ export default function RootLayout() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="loading" options={{ headerShown: false }} />
       <Stack.Screen name="story" options={{ headerShown: false }} />
-      <Stack.Screen name="stories/[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }

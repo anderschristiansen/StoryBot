@@ -13,7 +13,7 @@ const _layout = () => {
         borderTopWidth: 1,
         paddingTop: 5,
         paddingBottom: 5,
-        height: 65,
+        height: 80,
       },
       tabBarLabelStyle: {
         fontSize: 14,

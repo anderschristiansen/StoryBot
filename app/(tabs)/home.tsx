@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View, FlatList, Modal, Alert, Dimensions } from 'react-native';
 import { router } from 'expo-router';
-import { useAppStore } from '../../store/appStore';
+import React, { useState } from 'react';
+import { Alert, Dimensions, FlatList, Modal, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import { STORY_THEMES } from '../../data/storyThemes';
+import { useAppStore } from '../../store/appStore';
 import { StoryTheme } from '../../types/story';
 
 const { width } = Dimensions.get('window');
@@ -108,7 +108,7 @@ const Home = () => {
                   Vil du starte dette eventyr?
                 </Text>
 
-                <View className="flex-row space-x-3">
+                <View className="flex-row space-x-3 gap-2">
                   <TouchableOpacity
                     onPress={() => setShowModal(false)}
                     className="flex-1 py-3 px-4 bg-primary-200 rounded-xl"
