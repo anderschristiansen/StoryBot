@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a React Native/Expo application called "StoryBot" built with TypeScript. The project uses Expo Router for file-based routing. Currently has a minimal structure with full example code available in `app-example/`.
+This is a React Native/Expo application called "StoryBot" built with TypeScript. The app is a story generation platform that uses AI to create interactive stories for users, with features like user profiles, story themes, progress tracking, and gamification elements.
 
 ## Development Commands
 
@@ -20,20 +20,53 @@ This is a React Native/Expo application called "StoryBot" built with TypeScript.
 
 ### Current Structure
 - `app/` - Main application code using Expo Router file-based routing
-  - `_layout.tsx` - Basic Stack navigator root layout
-  - `index.tsx` - Main screen (currently minimal)
-- `app-example/` - Full featured example with tabs, theming, and components
-- `assets/` - Static assets (fonts, images)
+  - `(tabs)/` - Tab-based navigation screens
+    - `home.tsx` - Home/dashboard screen
+    - `stories.tsx` - Stories list/library screen
+    - `profile.tsx` - User profile and settings screen
+    - `_layout.tsx` - Tab navigator layout
+  - `_layout.tsx` - Root Stack navigator layout
+  - `index.tsx` - Initial/welcome screen
+  - `loading.tsx` - Story generation loading screen
+  - `story.tsx` - Individual story reading screen
+- `components/` - Reusable UI components
+- `services/` - External service integrations
+  - `openaiService.ts` - OpenAI API integration for story generation
+- `store/` - Global state management
+  - `appStore.ts` - Zustand store for app state
+- `data/` - Static data and configurations
+  - `storyThemes.ts` - Available story themes and categories
+- `types/` - TypeScript type definitions
+  - `story.ts` - Story-related types
+  - `gamification.ts` - Gamification system types
+- `utils/` - Utility functions
+  - `storage.ts` - Async storage utilities
+  - `gamificationUtils.ts` - Points and achievement logic
+- `assets/` - Static assets (fonts, images, animations)
 
 ### Technical Stack
 - Expo SDK ~53.0 with New Architecture enabled
 - React 19 and React Native 0.79
 - TypeScript with strict mode enabled
 - NativeWind 4.x for styling with Tailwind CSS
-- Path aliases configured: `@/*` maps to root directory
+- Zustand for state management
+- OpenAI API for story generation
+- Lottie React Native for animations
+- Async Storage for data persistence
+- Expo Router for file-based routing
+- React Navigation for tab navigation
 - ESLint with Expo configuration
-- Metro bundler for web with static output
 - Support for iOS, Android, and web platforms
+
+### Key Features
+- **AI Story Generation**: Uses OpenAI API to generate personalized stories
+- **User Profiles**: Customizable user profiles with preferences
+- **Story Themes**: Multiple story categories and themes
+- **Interactive Stories**: Choice-based narratives with branching paths
+- **Gamification**: Points system and achievements
+- **Progress Tracking**: Story progress and completion tracking
+- **Loading Animations**: Lottie animations for better UX
+- **Offline Storage**: Local data persistence with Async Storage
 
 ### Styling System
 - **NativeWind**: Uses Tailwind CSS classes for styling React Native components
@@ -44,12 +77,10 @@ This is a React Native/Expo application called "StoryBot" built with TypeScript.
   - `text`: Dark brown text (#382017)
 - **Usage**: Apply classes like `bg-primary-300 text-primary-900` or `text-primary-700`
 
-### Development Patterns
-When expanding the app, refer to `app-example/` for:
-- **Legacy Theming**: Dark/light mode support with React Navigation themes, useColorScheme and useThemeColor hooks, themed components (ThemedText, ThemedView)
-- **Navigation**: Tab-based navigation with haptic feedback, platform-specific styling (transparent tab bar on iOS)
-- **Components**: Platform-specific UI components (IconSymbol, TabBarBackground), reusable components with theming support
-- **Font Loading**: SpaceMono font integration with expo-font
+### State Management
+- **Zustand Store**: Centralized state management for user data, stories, and app settings
+- **Async Storage**: Persistent storage for user preferences and story data
+- **Types**: Comprehensive TypeScript types for story structure and gamification
 
 ### Key Configuration
 - `expo-router` plugin with typed routes experiment enabled
