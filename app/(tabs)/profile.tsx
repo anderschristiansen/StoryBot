@@ -325,8 +325,7 @@ const Profile = () => {
               <View className="flex-row space-x-2">
                 {[
                   { value: 'dreng', label: 'Dreng' },
-                  { value: 'pige', label: 'Pige' },
-                  { value: 'andet', label: 'Andet' }
+                  { value: 'pige', label: 'Pige' }
                 ].map((option) => (
                   <TouchableOpacity
                     key={option.value}
