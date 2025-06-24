@@ -255,6 +255,26 @@ High quality digital art, professional children's book style.`;
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('CANCELLED');
       }
+      console.error('[StoryGen] Detailed error:', error);
+      
+      // Provide more specific error messages for debugging
+      if (error instanceof Error) {
+        if (error.message.includes('API key')) {
+          throw new Error('API nøgle problem. Tjek konfiguration.');
+        }
+        if (error.message.includes('rate limit')) {
+          throw new Error('For mange forespørgsler. Prøv igen om lidt.');
+        }
+        if (error.message.includes('insufficient_quota') || error.message.includes('quota') || error.message.includes('billing')) {
+          throw new Error('OpenAI kredit opbrugt. Tjek din OpenAI konto.');
+        }
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          throw new Error('Netværksfejl. Tjek internetforbindelse.');
+        }
+        // Log the actual error for debugging but still show user-friendly message
+        console.error('[StoryGen] Original error message:', error.message);
+      }
+      
       throw new Error('Kunne ikke generere historie. Prøv igen.');
     }
   }
@@ -349,13 +369,15 @@ High quality digital art, professional children's book style.`;
   }
 
   private static generateFallbackPlaceholder(): string {
-    return `https://via.placeholder.com/1024x1024/E5C4B8/382017?text=${encodeURIComponent('Billede\nindlæses...\n\n📚')}`;
+    // Use a more reliable placeholder service or return empty string
+    // DALL-E URLs expire after ~1 hour, so we need a permanent fallback
+    return 'https://placehold.co/1024x1024/E5C4B8/382017/png?text=Billede%20Mangler';
   }
 
   static generateDevelopmentPlaceholder(stepNumber: number, theme: StoryTheme): string {
-    const emoji = '📖';
-    const text = `Test\nBillede ${stepNumber}\n\n${emoji}\n\n${theme.title}`;
-    return `https://via.placeholder.com/1024x1024/E5C4B8/2C3E50?text=${encodeURIComponent(text)}`;
+    // Use a more reliable placeholder for development
+    const text = encodeURIComponent(`Trin ${stepNumber}\n${theme.title}`);
+    return `https://placehold.co/1024x1024/E5C4B8/2C3E50/png?text=${text}`;
   }
 
   static async generateStoryOutcome(story: Story): Promise<string> {

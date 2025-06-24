@@ -1,14 +1,29 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, FlatList, Image, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, FlatList, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useAppStore } from '../../store/appStore';
 import { Story } from '../../types/story';
 
 const { width } = Dimensions.get('window');
 
+// Fallback image component for when images fail to load
+const FallbackImage = ({ theme }: { theme: string }) => (
+  <View 
+    style={{ width: width - 24, height: (width - 24) * 0.5 }}
+    className="rounded-t-2xl bg-primary-200 items-center justify-center border-b-2 border-primary-300"
+  >
+    <Text className="text-5xl mb-2">📚</Text>
+    <Text className="text-lg font-bold text-primary-800 text-center px-4">
+      {theme}
+    </Text>
+  </View>
+);
+
 const Stories = () => {
   const { savedStories, loadSavedStories, setCurrentStory, deleteSavedStory, replayStory } = useAppStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadSavedStories();
@@ -49,19 +64,38 @@ const Stories = () => {
     );
   };
 
+  const handleImageError = (imageUrl: string) => {
+    console.log('[Stories] Image failed to load:', imageUrl);
+    setImageErrors(prev => new Set(prev).add(imageUrl));
+  };
+
   const renderStoryCard = ({ item: story }: { item: Story }) => {
     const firstStep = story.steps[0];
     
     return (
       <View className="bg-white rounded-2xl m-3 shadow-sm border border-primary-100">
         {/* Story Image */}
-        {firstStep?.image && (
+        {firstStep?.image && !imageErrors.has(firstStep.image) ? (
           <Image
             source={{ uri: firstStep.image }}
-            style={{ width: width - 24, height: (width - 24) * 0.5 }}
-            className="rounded-t-2xl"
-            resizeMode="cover"
+            style={{ 
+              width: width - 24, 
+              height: (width - 24) * 0.5,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16
+            }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            onError={(event) => {
+              console.log('[Stories] Image error:', event);
+              handleImageError(firstStep.image);
+            }}
+            placeholder={require('../../assets/images/icon.png')}
+            placeholderContentFit="contain"
+            transition={300}
           />
+        ) : (
+          <FallbackImage theme={story.theme} />
         )}
         
         {/* Story Info */}

@@ -1,11 +1,28 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { OpenAIService } from '../services/openaiService';
 import { useAppStore } from '../store/appStore';
 import { Choice, StoryStep } from '../types/story';
 
 const { width } = Dimensions.get('window');
+
+// Fallback image component for when images fail to load
+const FallbackImage = ({ stepNumber, theme }: { stepNumber: number; theme: string }) => (
+  <View 
+    style={{ width: width - 48, height: (width - 48) * 0.75 }}
+    className="rounded-2xl bg-primary-200 items-center justify-center border-2 border-primary-300"
+  >
+    <Text className="text-6xl mb-2">📚</Text>
+    <Text className="text-xl font-bold text-primary-800 text-center px-4">
+      {theme}
+    </Text>
+    <Text className="text-lg text-primary-600 mt-1">
+      Trin {stepNumber}
+    </Text>
+  </View>
+);
 
 const StoryScreen = () => {
   const { currentStory, updateSavedStory, setCurrentStory } = useAppStore();
@@ -13,6 +30,7 @@ const StoryScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [storyProgress, setStoryProgress] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!currentStory) {
@@ -37,6 +55,12 @@ const StoryScreen = () => {
     setCurrentStepIndex(currentIndex);
     setStoryProgress(((currentIndex + 1) / currentStory.steps.length) * 100);
   }, [currentStory]);
+
+  const handleImageError = (imageUrl: string, error?: any) => {
+    console.log('[Story] Image failed to load:', imageUrl);
+    console.log('[Story] Error details:', error);
+    setImageErrors(prev => new Set(prev).add(imageUrl));
+  };
 
   const handleChoice = async (choice: Choice) => {
     if (!currentStory || !currentStep) return;
@@ -276,12 +300,34 @@ const StoryScreen = () => {
 
           {/* Final Image */}
           <View className="items-center mb-6">
-            <Image
-              source={{ uri: currentStep.image }}
-              style={{ width: width - 48, height: (width - 48) * 0.75 }}
-              className="rounded-2xl"
-              resizeMode="cover"
-            />
+            {currentStep.image && !imageErrors.has(currentStep.image) ? (
+              <>
+                {console.log('[Story] Attempting to load image:', currentStep.image.substring(0, 100) + '...')}
+                <Image
+                  source={{ uri: currentStep.image }}
+                  style={{ 
+                    width: width - 48, 
+                    height: (width - 48) * 0.75,
+                    borderRadius: 16
+                  }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  onError={(event) => {
+                    console.log('[Story] Image error event:', event);
+                    handleImageError(currentStep.image, event);
+                  }}
+                  onLoad={() => console.log('[Story] Image loaded successfully')}
+                  placeholder={require('../assets/images/icon.png')}
+                  placeholderContentFit="contain"
+                  transition={300}
+                />
+              </>
+            ) : (
+              <FallbackImage 
+                stepNumber={currentStory.steps.length} 
+                theme={currentStory.theme}
+              />
+            )}
           </View>
 
           {/* Story Outcome */}
@@ -342,12 +388,34 @@ const StoryScreen = () => {
         <View className="px-6 pb-8">
           {/* Story Image */}
           <View className="items-center mb-6">
-            <Image
-              source={{ uri: currentStep.image }}
-              style={{ width: width - 48, height: (width - 48) * 0.75 }}
-              className="rounded-2xl"
-              resizeMode="cover"
-            />
+            {currentStep.image && !imageErrors.has(currentStep.image) ? (
+              <>
+                {console.log('[Story] Attempting to load image:', currentStep.image.substring(0, 100) + '...')}
+                <Image
+                  source={{ uri: currentStep.image }}
+                  style={{ 
+                    width: width - 48, 
+                    height: (width - 48) * 0.75,
+                    borderRadius: 16
+                  }}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  onError={(event) => {
+                    console.log('[Story] Image error event:', event);
+                    handleImageError(currentStep.image, event);
+                  }}
+                  onLoad={() => console.log('[Story] Image loaded successfully')}
+                  placeholder={require('../assets/images/icon.png')}
+                  placeholderContentFit="contain"
+                  transition={300}
+                />
+              </>
+            ) : (
+              <FallbackImage 
+                stepNumber={currentStepIndex + 1} 
+                theme={currentStory.theme}
+              />
+            )}
           </View>
 
           {/* Story Text */}
