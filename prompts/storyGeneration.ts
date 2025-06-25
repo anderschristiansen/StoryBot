@@ -50,6 +50,8 @@ VALG DESIGN - MEGET VIGTIGT:
 - Korrekt valg: viser empati, ærlighed, hjælpsomhed, mod, eller ansvar
 - Problematiske valg: viser egoisme, uærlighed, griskhed, eller frygt
 - VIGTIGT: Variere placeringen af det korrekte valg (position 1, 2, eller 3) tilfældigt
+- KRITISK: Alle 3 valg skal være UNIKKE og FORSKELLIGE - ingen gentagelser eller lignende formuleringer
+- Hver valg skal repræsentere en KLAR FORSKELLIG handling eller tilgang til situationen
 - Fejl-information skal være lærerig og forståelig, ikke skræmmende
 - Vis konkrete konsekvenser af dårlige valg
 
@@ -86,7 +88,7 @@ VIGTIG INSTRUKTION - JSON OUTPUT:
       "choices": [
         {
           "id": "choice1_1",
-          "text": "Du [konkret handling i 2. person] - eksempel: 'Du forsøger at løbe væk af frygt'",
+          "text": "Du [handling 1 - eksempel: 'Du løber væk uden at hjælpe']",
           "isCorrect": false,
           "failureInfo": {
             "text": "Forklaring på dansk af hvad der går galt og hvorfor",
@@ -95,13 +97,13 @@ VIGTIG INSTRUKTION - JSON OUTPUT:
         },
         {
           "id": "choice1_2",
-          "text": "Du [konkret handling i 2. person] - eksempel: 'Du vælger at hjælpe den der har brug for det'", 
+          "text": "Du [handling 2 - eksempel: 'Du tilbyder din hjælp øjeblikkeligt']", 
           "isCorrect": true,
           "nextStepId": "step2"
         },
         {
           "id": "choice1_3",
-          "text": "Du [konkret handling i 2. person] - eksempel: 'Du ignorerer situationen og tænker kun på dig selv'",
+          "text": "Du [handling 3 - eksempel: 'Du står og kigger uden at gøre noget']",
           "isCorrect": false,
           "failureInfo": {
             "text": "Forklaring på dansk af hvad der går galt og hvorfor",
@@ -109,6 +111,11 @@ VIGTIG INSTRUKTION - JSON OUTPUT:
           }
         }
       ]
+
+EKSEMPEL PÅ UNIKKE VALG (alle forskellige handlinger):
+- "Du løber hen og hjælper øjeblikkeligt" (aktiv hjælp)
+- "Du råber på andre voksne om hjælp" (søger assistance) 
+- "Du ignorerer situationen og går videre" (undgår involvering)
     }${storySteps > 1 ? ',' : ''}
     ${Array.from({length: storySteps - 1}, (_, i) => `{
       "id": "step${i + 2}",
