@@ -26,8 +26,21 @@ const Stories = () => {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    console.log('[Stories] Component mounted, loading saved stories...');
     loadSavedStories();
   }, []);
+
+  useEffect(() => {
+    console.log('[Stories] Saved stories updated:', savedStories.length, 'stories');
+    savedStories.forEach((story, index) => {
+      console.log(`[Stories] Story ${index + 1}:`, {
+        id: story.id,
+        title: story.title,
+        completed: story.completed,
+        createdAt: story.createdAt
+      });
+    });
+  }, [savedStories]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

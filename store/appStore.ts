@@ -63,20 +63,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   loadSavedStories: async () => {
     try {
+      console.log('[AppStore] Loading saved stories...');
       const stories = await StorageUtils.getSavedStories();
+      console.log('[AppStore] Loaded stories:', stories.length);
       set({ savedStories: stories });
     } catch (error) {
-      console.error('Error loading saved stories:', error);
+      console.error('[AppStore] Error loading saved stories:', error);
     }
   },
 
   addSavedStory: async (story: Story) => {
     try {
+      console.log('[AppStore] Adding new story:', story.id, story.title);
       await StorageUtils.addStory(story);
       const { savedStories } = get();
       set({ savedStories: [...savedStories, story] });
+      console.log('[AppStore] Story added successfully, total stories:', savedStories.length + 1);
     } catch (error) {
-      console.error('Error adding saved story:', error);
+      console.error('[AppStore] Error adding saved story:', error);
       throw error;
     }
   },

@@ -39,40 +39,65 @@ export const StorageUtils = {
   // Stories
   async saveStories(stories: Story[]): Promise<void> {
     try {
+      console.log('[Storage] Saving stories, count:', stories.length);
       const storiesData = stories.map(story => ({
         ...story,
-        createdAt: story.createdAt.toISOString()
+        createdAt: story.createdAt instanceof Date ? story.createdAt.toISOString() : story.createdAt
       }));
-      await AsyncStorage.setItem(STORAGE_KEYS.SAVED_STORIES, JSON.stringify(storiesData));
+      const jsonData = JSON.stringify(storiesData);
+      console.log('[Storage] Saving JSON length:', jsonData.length);
+      await AsyncStorage.setItem(STORAGE_KEYS.SAVED_STORIES, jsonData);
+      console.log('[Storage] Stories saved to AsyncStorage');
     } catch (error) {
-      console.error('Error saving stories:', error);
+      console.error('[Storage] Error saving stories:', error);
       throw error;
     }
   },
 
   async getSavedStories(): Promise<Story[]> {
     try {
+      console.log('[Storage] Getting saved stories...');
       const stories = await AsyncStorage.getItem(STORAGE_KEYS.SAVED_STORIES);
-      if (!stories) return [];
+      console.log('[Storage] Raw storage value:', stories ? 'Found data' : 'No data');
+      
+      if (!stories) {
+        console.log('[Storage] No stories found in storage');
+        return [];
+      }
       
       const parsedStories = JSON.parse(stories);
+      console.log('[Storage] Parsed stories count:', parsedStories.length);
+      
+      // Debug first story if exists
+      if (parsedStories.length > 0) {
+        console.log('[Storage] First story sample:', {
+          id: parsedStories[0].id,
+          title: parsedStories[0].title,
+          hasSteps: !!parsedStories[0].steps,
+          stepsCount: parsedStories[0].steps?.length
+        });
+      }
+      
       return parsedStories.map((story: any) => ({
         ...story,
         createdAt: new Date(story.createdAt)
       }));
     } catch (error) {
-      console.error('Error getting saved stories:', error);
+      console.error('[Storage] Error getting saved stories:', error);
       return [];
     }
   },
 
   async addStory(story: Story): Promise<void> {
     try {
+      console.log('[Storage] Adding story:', story.id);
       const existingStories = await this.getSavedStories();
       const updatedStories = [...existingStories, story];
+      console.log('[Storage] Saving total stories:', updatedStories.length);
       await this.saveStories(updatedStories);
+      console.log('[Storage] Story saved successfully');
     } catch (error) {
-      console.error('Error adding story:', error);
+      console.error('[Storage] Error adding story:', error);
       throw error;
     }
   },
@@ -89,9 +114,27 @@ export const StorageUtils = {
       });
       
       const existingStories = await this.getSavedStories();
+      console.log('[Storage] Existing stories before update:', existingStories.length);
+      
+      // Safety check: if no existing stories but we're updating, the story might not be saved yet
+      if (existingStories.length === 0) {
+        console.warn('[Storage] No existing stories found during update, adding as new story');
+        await this.addStory(updatedStory);
+        return;
+      }
+      
       const updatedStories = existingStories.map(story => 
         story.id === updatedStory.id ? updatedStory : story
       );
+      
+      // Verify the story was found and updated
+      const wasUpdated = updatedStories.some(story => story.id === updatedStory.id);
+      if (!wasUpdated) {
+        console.warn('[Storage] Story not found in existing stories, adding as new');
+        updatedStories.push(updatedStory);
+      }
+      
+      console.log('[Storage] Saving updated stories:', updatedStories.length);
       await this.saveStories(updatedStories);
       
       console.log('[Storage] Story updated successfully');
