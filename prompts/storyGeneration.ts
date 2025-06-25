@@ -66,7 +66,11 @@ SETTING KONSISTENS:
 - Hold styr på placering og tid gennem hele historien
 - Referer til tidligere etablerede elementer
 
-Return ONLY valid JSON med denne EKSAKTE struktur:
+VIGTIG INSTRUKTION - JSON OUTPUT:
+- Return UDELUKKENDE valid JSON - INGEN markdown, INGEN forklaringer, INGEN \`\`\`json tags
+- Start dit svar direkte med { og slut med }
+- Ingen tekst før eller efter JSON strukturen
+- Brug denne EKSAKTE struktur:
 
 {
   "title": "Kreativ historie titel på dansk",
@@ -144,6 +148,8 @@ Return ONLY valid JSON med denne EKSAKTE struktur:
       "choices": []
     }
   ]
-}`;
+}
+
+HUSK: Dit svar skal starte med { og slutte med } - INGEN anden tekst!`;
   }
 };

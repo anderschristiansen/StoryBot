@@ -133,17 +133,14 @@ const LoadingScreen = () => {
           router.replace('/story');
         } else {
           // If cancelling, ensure story is not saved
-          console.log('[Loading] Story generation completed but user cancelled, not saving');
-        }
+          }
       } catch (error) {
         // Check if it was a cancellation first (not an error)
         if (error instanceof Error && error.message === 'CANCELLED') {
-          console.log('[Loading] Story generation cancelled by user');
-          
+            
           // Clean up any partially created story
           if (currentStoryId) {
-            console.log('[Loading] Cleaning up incomplete story:', currentStoryId);
-            try {
+                try {
               await deleteSavedStory(currentStoryId);
             } catch (deleteError) {
               console.warn('[Loading] Could not delete incomplete story:', deleteError);
@@ -172,7 +169,6 @@ const LoadingScreen = () => {
     // Cleanup function to abort generation if component unmounts
     return () => {
       if (abortControllerRef.current) {
-        console.log('[Loading] Cleanup: Aborting story generation');
         abortControllerRef.current.abort();
       }
     };
@@ -188,8 +184,7 @@ const LoadingScreen = () => {
           text: 'Ja, afbryd',
           style: 'destructive',
           onPress: async () => {
-            console.log('[Loading] User requested cancellation');
-            
+                  
             // Set cancelling state first to prevent any further processing
             setIsCancelling(true);
             
@@ -200,8 +195,7 @@ const LoadingScreen = () => {
             
             // Clean up any partially saved story
             if (currentStoryId) {
-              console.log('[Loading] Cleaning up partially saved story:', currentStoryId);
-              try {
+                    try {
                 await deleteSavedStory(currentStoryId);
                 setCurrentStoryId(null);
               } catch (deleteError) {
@@ -229,14 +223,12 @@ const LoadingScreen = () => {
   useEffect(() => {
     return () => {
       if (abortControllerRef.current && !isDemo) {
-        console.log('[Loading] Component unmounting, ensuring cleanup');
-        abortControllerRef.current.abort();
+          abortControllerRef.current.abort();
         setIsGeneratingStory(false);
         
         // Clean up any incomplete story when component unmounts
         if (currentStoryId) {
-          console.log('[Loading] Component unmounting, cleaning up story:', currentStoryId);
-          deleteSavedStory(currentStoryId).catch(error => {
+            deleteSavedStory(currentStoryId).catch(error => {
             console.warn('[Loading] Could not delete story during unmount:', error);
           });
         }

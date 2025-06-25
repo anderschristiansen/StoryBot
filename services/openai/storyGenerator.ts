@@ -28,7 +28,6 @@ export class StoryGenerator {
     const model = this.getModelForProfile(protagonist);
     const maxTokens = this.getMaxTokensForProfile(protagonist);
     
-    console.log(`[StoryGen] Using ${model} for user preference: ${protagonist.modelPreference || 'standard'}`);
     
     const completion = await openai.chat.completions.create({
       model,
@@ -68,8 +67,6 @@ export class StoryGenerator {
     let storyData;
     
     try {
-      console.log('[StoryGen] Parsing JSON response...');
-      console.log('[StoryGen] Response length:', responseContent.length, 'Finish reason:', finishReason);
       storyData = JSON.parse(responseContent);
     } catch (parseError) {
       console.error('[StoryGen] Failed to parse OpenAI response:', parseError);
@@ -95,7 +92,6 @@ export class StoryGenerator {
   }
 
   private static attemptJsonFix(responseContent: string): any {
-    console.log('[StoryGen] Attempting to fix truncated JSON...');
     let fixedJson = responseContent.trim();
     
     const openBraces = (fixedJson.match(/\{/g) || []).length;
@@ -109,10 +105,7 @@ export class StoryGenerator {
     fixedJson = fixedJson.replace(/,\s*}/g, '}');
     
     try {
-      console.log('[StoryGen] Attempting to parse fixed JSON...');
-      const parsed = JSON.parse(fixedJson);
-      console.log('[StoryGen] Successfully parsed fixed JSON');
-      return parsed;
+      return JSON.parse(fixedJson);
     } catch (fixError) {
       console.error('[StoryGen] Failed to fix truncated JSON:', fixError);
       return null;
@@ -120,15 +113,28 @@ export class StoryGenerator {
   }
 
   private static extractJsonFromResponse(responseContent: string): any {
-    const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        console.log('[StoryGen] Attempting to extract JSON from wrapped response...');
-        return JSON.parse(jsonMatch[0]);
-      } catch (secondParseError) {
-        console.error('[StoryGen] Second parse attempt failed:', secondParseError);
+    // Remove markdown code block wrappers
+    let cleanedContent = responseContent
+      .replace(/^```json\s*/i, '') // Remove opening ```json
+      .replace(/^```\s*/i, '')     // Remove opening ```
+      .replace(/\s*```\s*$/i, '')  // Remove closing ```
+      .trim();
+    
+    // Try parsing cleaned content first
+    try {
+      return JSON.parse(cleanedContent);
+    } catch {
+      // Fallback to regex extraction for complex cases
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          return JSON.parse(jsonMatch[0]);
+        } catch (regexParseError) {
+          console.error('[StoryGen] JSON extraction failed:', regexParseError);
+        }
       }
     }
+    
     return null;
   }
 
@@ -147,7 +153,6 @@ export class StoryGenerator {
       storyData.title = `${protagonist.name}s ${theme.title} Eventyr`;
     }
     
-    console.log(`[StoryGen] Story validation passed: ${storyData.steps.length} steps received`);
     return storyData as RawStoryData;
   }
 }

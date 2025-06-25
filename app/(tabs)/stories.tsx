@@ -26,20 +26,10 @@ const Stories = () => {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    console.log('[Stories] Component mounted, loading saved stories...');
     loadSavedStories();
   }, []);
 
   useEffect(() => {
-    console.log('[Stories] Saved stories updated:', savedStories.length, 'stories');
-    savedStories.forEach((story, index) => {
-      console.log(`[Stories] Story ${index + 1}:`, {
-        id: story.id,
-        title: story.title,
-        completed: story.completed,
-        createdAt: story.createdAt
-      });
-    });
   }, [savedStories]);
 
   const handleRefresh = async () => {
@@ -78,7 +68,6 @@ const Stories = () => {
   };
 
   const handleImageError = (imageUrl: string) => {
-    console.log('[Stories] Image failed to load:', imageUrl);
     setImageErrors(prev => new Set(prev).add(imageUrl));
   };
 
@@ -100,8 +89,7 @@ const Stories = () => {
             contentFit="cover"
             cachePolicy="memory-disk"
             onError={(event) => {
-              console.log('[Stories] Image error:', event);
-              handleImageError(firstStep.image);
+                      handleImageError(firstStep.image);
             }}
             placeholder={require('../../assets/images/icon.png')}
             placeholderContentFit="contain"

@@ -23,7 +23,6 @@ export class OpenAIService {
     
     // Limit story steps for standard model to avoid token limits  
     if ((protagonist.modelPreference || 'standard') === 'standard' && storySteps > 7) {
-      console.log(`[StoryGen] Limiting steps from ${storySteps} to 7 for standard model`);
       storySteps = 7;
     }
     
@@ -68,7 +67,6 @@ export class OpenAIService {
           abortSignal
         );
         
-        console.log(`[StoryGen] Generated ${images.length} images for ${storyData.steps.length} story steps`);
         
         // 3. Process and assemble story with images and context
         const processedSteps = StoryProcessor.processStorySteps(storyData.steps, theme, images, storyContext);
@@ -101,7 +99,6 @@ export class OpenAIService {
         if (error.message.includes('network') || error.message.includes('fetch')) {
           throw new Error('Netværksfejl. Tjek internetforbindelse.');
         }
-        console.error('[StoryGen] Original error message:', error.message);
       }
       
       throw new Error('Kunne ikke generere historie. Prøv igen.');

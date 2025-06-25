@@ -69,8 +69,7 @@ export class StoryProcessor {
       return ImageGenerator.generateImageWithRetry(
         ImageGenerator.generateImagePrompt(theme, protagonist, sceneContext, settingDetails, storyId), 
         abortSignal
-      ).catch(error => {
-        console.warn(`Image ${i + 1} failed:`, error);
+      ).catch(() => {
         return ImageGenerator.getDevelopmentPlaceholder(i + 1, theme);
       });
     });

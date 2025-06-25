@@ -44,7 +44,6 @@ const StoryScreen = () => {
     // Don't override failure steps that are currently being displayed
     setCurrentStep(prevStep => {
       if (prevStep && (prevStep as any).isFailureStep) {
-        console.log('[Story] Keeping failure step, not overriding with story step');
         return prevStep;
       }
       return step || null;
@@ -58,7 +57,6 @@ const StoryScreen = () => {
 
   const handleImageError = (imageUrl: string, error?: any) => {
     console.log('[Story] Image failed to load:', imageUrl);
-    console.log('[Story] Error details:', error);
     setImageErrors(prev => new Set(prev).add(imageUrl));
   };
 
@@ -75,7 +73,7 @@ const StoryScreen = () => {
       if (!choice.isCorrect) {
         // Wrong choice - show inline failure
         updatedWrongChoicesCount++;
-        console.log('[Choice] Wrong choice made:', choice.text);
+
         
         // Display failure info inline (no navigation needed)
         const failureStep = {
@@ -85,7 +83,6 @@ const StoryScreen = () => {
           retryFromStepId: currentStep.id
         } as any; // Temporary type assertion for transition
         
-        console.log('[Choice] Setting failure step:', failureStep);
         setCurrentStep(failureStep);
         
         // Update story with wrong choice tracking
@@ -100,12 +97,10 @@ const StoryScreen = () => {
         await updateSavedStory(updatedStory);
         setCurrentStory(updatedStory);
         
-        console.log('[Choice] Showing inline failure for wrong choice');
         return;
       }
       
       // Correct choice - proceed to next step
-      console.log('[Choice] Correct choice made:', choice.text);
       
       const nextStep = currentStory.steps.find(s => s.id === choice.nextStepId);
       
@@ -127,16 +122,11 @@ const StoryScreen = () => {
         
         // Only mark as correctly completed if reached via correct choices
         updatedStory.completedCorrectly = (updatedWrongChoicesCount === 0);
-        console.log('[Choice] Story completed:', {
-          correctlyCompleted: updatedStory.completedCorrectly,
-          wrongChoices: updatedWrongChoicesCount
-        });
       }
 
       // Update the story in store and storage
       await updateSavedStory(updatedStory);
       setCurrentStory(updatedStory);
-      console.log('[Choice] Story updated successfully');
 
     } catch (error) {
       console.error('Error handling choice:', error);
@@ -170,7 +160,6 @@ const StoryScreen = () => {
       if (originalStep) {
         // Clear failure state and show original step
         setCurrentStep(originalStep);
-        console.log('[Retry] Returning to original step for retry');
         
         // Update retry count in story
         const updatedStory = {
@@ -181,7 +170,6 @@ const StoryScreen = () => {
         await updateSavedStory(updatedStory);
         setCurrentStory(updatedStory);
         
-        console.log('[Retry] Showing original step for retry, attempts:', updatedRetryAttempts);
       }
       
     } catch (error) {
@@ -302,7 +290,6 @@ const StoryScreen = () => {
           <View className="items-center mb-6">
             {currentStep.image && !imageErrors.has(currentStep.image) ? (
               <>
-                {console.log('[Story] Attempting to load image:', currentStep.image.substring(0, 100) + '...')}
                 <Image
                   source={{ uri: currentStep.image }}
                   style={{ 
@@ -313,10 +300,9 @@ const StoryScreen = () => {
                   contentFit="cover"
                   cachePolicy="memory-disk"
                   onError={(event) => {
-                    console.log('[Story] Image error event:', event);
                     handleImageError(currentStep.image, event);
                   }}
-                  onLoad={() => console.log('[Story] Image loaded successfully')}
+                  onLoad={() => {}}
                   placeholder={require('../assets/images/icon.png')}
                   placeholderContentFit="contain"
                   transition={300}
@@ -390,7 +376,6 @@ const StoryScreen = () => {
           <View className="items-center mb-6">
             {currentStep.image && !imageErrors.has(currentStep.image) ? (
               <>
-                {console.log('[Story] Attempting to load image:', currentStep.image.substring(0, 100) + '...')}
                 <Image
                   source={{ uri: currentStep.image }}
                   style={{ 
@@ -401,10 +386,9 @@ const StoryScreen = () => {
                   contentFit="cover"
                   cachePolicy="memory-disk"
                   onError={(event) => {
-                    console.log('[Story] Image error event:', event);
                     handleImageError(currentStep.image, event);
                   }}
-                  onLoad={() => console.log('[Story] Image loaded successfully')}
+                  onLoad={() => {}}
                   placeholder={require('../assets/images/icon.png')}
                   placeholderContentFit="contain"
                   transition={300}
