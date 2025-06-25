@@ -1,7 +1,7 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Dimensions, FlatList, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { useAppStore } from '../../store/appStore';
 import { Story } from '../../types/story';
 
@@ -54,7 +54,7 @@ const Stories = () => {
 
   const handleDeleteStory = (story: Story) => {
     Alert.alert(
-      'Slet Historie',
+      'Slet historie',
       `Er du sikker på, at du vil slette "${story.title}"?`,
       [
         { text: 'Nej', style: 'cancel' },
@@ -152,7 +152,7 @@ const Stories = () => {
               <Text className={`text-center font-semibold ${
                 story.completed ? 'text-primary-900' : 'text-white'
               }`}>
-                {story.completed ? 'Se Slutning' : 'Fortsæt'}
+                {story.completed ? 'Se slutning' : 'Fortsæt'}
               </Text>
             </TouchableOpacity>
 
@@ -162,7 +162,7 @@ const Stories = () => {
               className="flex-1 py-3 px-4 bg-primary-100 border border-primary-300 rounded-xl"
             >
               <Text className="text-primary-900 text-center font-semibold">
-                Spil Igen
+                Spil igen
               </Text>
             </TouchableOpacity>
 
@@ -184,7 +184,7 @@ const Stories = () => {
       <SafeAreaView className="flex-1 bg-primary-50">
         <View className="px-6 pt-4 pb-2">
           <Text className="text-3xl font-bold text-primary-900">
-            Mine Historier
+            Mine historier
           </Text>
         </View>
         
@@ -214,7 +214,7 @@ const Stories = () => {
     <SafeAreaView className="flex-1 bg-primary-50">
       <View className="px-6 pt-4 pb-2">
         <Text className="text-3xl font-bold text-primary-900">
-          Mine Historier
+          Mine historier
         </Text>
         <Text className="text-lg text-primary-700 mt-1">
           Fortsæt hvor du slap eller spil igen fra begyndelsen

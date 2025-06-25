@@ -1,7 +1,7 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Dimensions, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { OpenAIService } from '../services/openaiService';
 import { useAppStore } from '../store/appStore';
 import { Choice, StoryStep } from '../types/story';
@@ -275,7 +275,7 @@ const StoryScreen = () => {
             <View className="mt-4 bg-white rounded-xl p-4">
               <Text className="text-center text-primary-900 font-semibold">
                 {currentStory.completedCorrectly 
-                  ? '🌟 Du traf alle de rigtige moral-valg!' 
+                  ? '🌟 Du traf alle de rigtige valg!' 
                   : `✨ Fuldført med ${currentStory.wrongChoicesCount || 0} fejl og ${currentStory.retryAttempts || 0} gentagelser`}
               </Text>
               {!currentStory.completedCorrectly && (
@@ -320,7 +320,7 @@ const StoryScreen = () => {
           {currentStory.outcome && (
             <View className="bg-primary-100 rounded-2xl p-6 mb-6">
               <Text className="text-xl font-bold text-primary-900 mb-3 text-center">
-                Din Historie
+                Din historie
               </Text>
               <Text className="text-lg text-primary-800 leading-7 text-center">
                 {currentStory.outcome}
@@ -336,7 +336,7 @@ const StoryScreen = () => {
               className="bg-primary-500 py-4 px-6 rounded-2xl"
             >
               <Text className="text-xl font-bold text-white text-center">
-                Ny Historie
+                Ny historie
               </Text>
             </TouchableOpacity>
             
@@ -345,7 +345,7 @@ const StoryScreen = () => {
               className="bg-primary-200 py-4 px-6 rounded-2xl"
             >
               <Text className="text-xl font-bold text-primary-900 text-center">
-                Mine Historier
+                Mine historier
               </Text>
             </TouchableOpacity>
           </View>
@@ -467,7 +467,7 @@ const StoryScreen = () => {
               {currentStory.outcome && (
                 <View className="bg-primary-100 rounded-2xl p-6">
                   <Text className="text-xl font-bold text-primary-900 mb-3 text-center">
-                    Din Historie
+                    Din historie
                   </Text>
                   <Text className="text-lg text-primary-800 leading-7 text-center">
                     {currentStory.outcome}
@@ -489,7 +489,7 @@ const StoryScreen = () => {
                     className="bg-primary-500 py-3 px-6 rounded-xl"
                   >
                     <Text className="text-lg font-bold text-white text-center">
-                      Ny Historie
+                      Ny historie
                     </Text>
                   </TouchableOpacity>
                   
@@ -498,7 +498,7 @@ const StoryScreen = () => {
                     className="bg-primary-200 py-3 px-6 rounded-xl"
                   >
                     <Text className="text-lg font-bold text-primary-900 text-center">
-                      Mine Historier
+                      Mine historier
                     </Text>
                   </TouchableOpacity>
                 </View>
