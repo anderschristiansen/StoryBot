@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, SafeAreaView, Switch } from 'react-native';
 import { router } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, SafeAreaView, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { promptHelpers } from '../../prompts';
+import { artStyles } from '../../prompts/imageGeneration';
 import { useAppStore } from '../../store/appStore';
-import { UserProfile } from '../../types/story';
+import { ModelPreference, UserProfile, ArtStyle } from '../../types/story';
 import { StorageUtils } from '../../utils/storage';
 
 const Profile = () => {
@@ -13,6 +15,8 @@ const Profile = () => {
   const [enableImages, setEnableImages] = useState(true);
   const [developerMode, setDeveloperMode] = useState(false);
   const [storySteps, setStorySteps] = useState(5);
+  const [modelPreference, setModelPreference] = useState<ModelPreference>('standard');
+  const [artStyle, setArtStyle] = useState<ArtStyle>('pixar');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -24,6 +28,8 @@ const Profile = () => {
       setEnableImages(userProfile.enableImages ?? true); // Default to true
       setDeveloperMode(userProfile.developerMode ?? false); // Default to false
       setStorySteps(userProfile.storySteps ?? 5); // Default to 5
+      setModelPreference(userProfile.modelPreference ?? 'standard'); // Default to standard
+      setArtStyle(userProfile.artStyle ?? 'pixar'); // Default to pixar
     }
   }, [userProfile]);
 
@@ -51,7 +57,9 @@ const Profile = () => {
       gender,
       enableImages,
       developerMode,
-      storySteps
+      storySteps,
+      modelPreference,
+      artStyle
     };
 
     try {
@@ -73,6 +81,8 @@ const Profile = () => {
       setEnableImages(userProfile.enableImages ?? true);
       setDeveloperMode(userProfile.developerMode ?? false);
       setStorySteps(userProfile.storySteps ?? 5);
+      setModelPreference(userProfile.modelPreference ?? 'standard');
+      setArtStyle(userProfile.artStyle ?? 'pixar');
     }
     setIsEditing(false);
   };
@@ -86,7 +96,7 @@ const Profile = () => {
   };
 
   // Auto-save function for developer settings
-  const handleDeveloperSettingChange = async (setting: 'enableImages' | 'developerMode', value: boolean) => {
+  const handleDeveloperSettingChange = async (setting: 'enableImages' | 'developerMode' | 'storySteps' | 'modelPreference' | 'artStyle', value: boolean | number | ModelPreference | ArtStyle) => {
     if (!userProfile) return;
     
     const updatedProfile: UserProfile = {
@@ -99,9 +109,15 @@ const Profile = () => {
       
       // Update local state
       if (setting === 'enableImages') {
-        setEnableImages(value);
+        setEnableImages(value as boolean);
       } else if (setting === 'developerMode') {
-        setDeveloperMode(value);
+        setDeveloperMode(value as boolean);
+      } else if (setting === 'storySteps') {
+        setStorySteps(value as number);
+      } else if (setting === 'modelPreference') {
+        setModelPreference(value as ModelPreference);
+      } else if (setting === 'artStyle') {
+        setArtStyle(value as ArtStyle);
       }
       
     } catch (error) {
@@ -277,44 +293,6 @@ const Profile = () => {
             )}
           </View>
 
-          {/* Story Steps Configuration */}
-          <View className="mb-4">
-            <Text className="text-lg font-semibold text-primary-900 mb-2">
-              Historie Længde
-            </Text>
-            {isEditing ? (
-              <View className="flex-row items-center justify-center bg-primary-50 border border-primary-200 rounded-xl py-3">
-                <TouchableOpacity
-                  onPress={() => setStorySteps(Math.max(3, storySteps - 1))}
-                  className="w-10 h-10 bg-primary-200 rounded-full items-center justify-center"
-                  disabled={storySteps <= 3}
-                >
-                  <Text className="text-xl font-bold text-primary-900">-</Text>
-                </TouchableOpacity>
-                
-                <View className="mx-6 px-4 py-1 bg-primary-100 rounded-lg">
-                  <Text className="text-2xl font-bold text-primary-900 text-center">
-                    {storySteps}
-                  </Text>
-                </View>
-                
-                <TouchableOpacity
-                  onPress={() => setStorySteps(Math.min(10, storySteps + 1))}
-                  className="w-10 h-10 bg-primary-200 rounded-full items-center justify-center"
-                  disabled={storySteps >= 10}
-                >
-                  <Text className="text-xl font-bold text-primary-900">+</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <Text className="text-lg text-primary-700 py-3">
-                {userProfile.storySteps ?? 5} trin per historie
-              </Text>
-            )}
-            <Text className="text-sm text-primary-600 mt-1 text-center">
-              Vælg mellem 3-10 trin per historie
-            </Text>
-          </View>
 
           {/* Gender */}
           <View className="mb-6">
@@ -350,6 +328,7 @@ const Profile = () => {
               </Text>
             )}
           </View>
+
 
           {/* Edit Actions */}
           {isEditing && (
@@ -430,6 +409,134 @@ const Profile = () => {
                 trackColor={{ false: '#E5E7EB', true: '#8B5CF6' }}
                 thumbColor={developerMode ? '#FFFFFF' : '#9CA3AF'}
               />
+            </View>
+          </View>
+
+          {/* Story Steps Configuration */}
+          <View className="mb-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1 mr-4">
+                <Text className="text-lg font-semibold text-blue-900 mb-1">
+                  Historie Længde
+                </Text>
+                <Text className="text-sm text-blue-700">
+                  {storySteps} trin per historie (3-10)
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <TouchableOpacity
+                  onPress={() => {
+                    const newSteps = Math.max(3, storySteps - 1);
+                    setStorySteps(newSteps);
+                    handleDeveloperSettingChange('storySteps', newSteps);
+                  }}
+                  className="w-8 h-8 bg-blue-200 rounded-full items-center justify-center mr-2"
+                  disabled={storySteps <= 3}
+                >
+                  <Text className="text-lg font-bold text-blue-900">-</Text>
+                </TouchableOpacity>
+                
+                <View className="w-10 h-8 bg-blue-100 rounded items-center justify-center">
+                  <Text className="text-lg font-bold text-blue-900">
+                    {storySteps}
+                  </Text>
+                </View>
+                
+                <TouchableOpacity
+                  onPress={() => {
+                    const newSteps = Math.min(10, storySteps + 1);
+                    setStorySteps(newSteps);
+                    handleDeveloperSettingChange('storySteps', newSteps);
+                  }}
+                  className="w-8 h-8 bg-blue-200 rounded-full items-center justify-center ml-2"
+                  disabled={storySteps >= 10}
+                >
+                  <Text className="text-lg font-bold text-blue-900">+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Model Preference */}
+          <View className="mb-4">
+            <View className="mb-2">
+              <Text className="text-lg font-semibold text-blue-900 mb-1">
+                AI Model Kvalitet
+              </Text>
+              <Text className="text-sm text-blue-700">
+                {promptHelpers.getModelDisplayName(modelPreference)} - {promptHelpers.getModelDescription(modelPreference)}
+              </Text>
+            </View>
+            <View className="flex-row space-x-2 gap-3">
+              {[
+                { value: 'standard' as ModelPreference, label: 'Standard', icon: '⚡' },
+                { value: 'premium' as ModelPreference, label: 'Premium', icon: '🚀' }
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  onPress={() => {
+                    setModelPreference(option.value);
+                    handleDeveloperSettingChange('modelPreference', option.value);
+                  }}
+                  className={`flex-1 p-3 rounded-xl border ${
+                    modelPreference === option.value 
+                      ? 'bg-blue-200 border-blue-400' 
+                      : 'bg-blue-50 border-blue-200'
+                  }`}
+                >
+                  <Text className={`text-center font-semibold ${
+                    modelPreference === option.value ? 'text-blue-900' : 'text-blue-700'
+                  }`}>
+                    {option.icon} {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Art Style Selection */}
+          <View className="mb-4">
+            <View className="mb-3">
+              <Text className="text-lg font-semibold text-blue-900 mb-1">
+                Billede Stil
+              </Text>
+              <Text className="text-sm text-blue-700">
+                {artStyles[artStyle]?.name} - {artStyles[artStyle]?.description}
+              </Text>
+            </View>
+            <View className="space-y-2">
+              {Object.entries(artStyles).map(([key, style]) => (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => {
+                    setArtStyle(key as ArtStyle);
+                    handleDeveloperSettingChange('artStyle', key as ArtStyle);
+                  }}
+                  className={`p-3 rounded-xl border ${
+                    artStyle === key 
+                      ? 'bg-blue-200 border-blue-400' 
+                      : 'bg-blue-50 border-blue-200'
+                  }`}
+                >
+                  <View className="flex-row items-center justify-between">
+                    <View>
+                      <Text className={`font-semibold ${
+                        artStyle === key ? 'text-blue-900' : 'text-blue-700'
+                      }`}>
+                        {style.name}
+                      </Text>
+                      <Text className={`text-sm ${
+                        artStyle === key ? 'text-blue-800' : 'text-blue-600'
+                      }`}>
+                        {style.description}
+                      </Text>
+                    </View>
+                    {artStyle === key && (
+                      <Text className="text-blue-500 text-lg">✓</Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
